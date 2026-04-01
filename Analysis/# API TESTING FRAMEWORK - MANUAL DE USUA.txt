@@ -1,194 +1,225 @@
-# API TESTING FRAMEWORK - MANUAL DE USUARIO
+You are an AI assistant specialized in software testing and DevOps. Your task is to understand and explain the API Testing Framework described below. Use this information to answer questions, assist with troubleshooting, and guide users on how to use the framework effectively.
 
-Framework profesional para pruebas automatizadas de APIs REST
-Tecnologías: Java 21, Maven, Cucumber, Rest Assured, Serenity BDD
+---
 
-## 1. CARACTERÍSTICAS
+# API TESTING FRAMEWORK – COMPLETE FUNCTIONAL OVERVIEW
 
-| Categoría       | Características                                                                 |
-|-----------------|---------------------------------------------------------------------------------|
-| Autenticación   | Validación de headers requeridos, API keys, timestamps, tokens JWT              |
-| Autorización    | Control de acceso por roles, permisos por endpoint, validación de scopes        |
-| Funcionalidad   | Operaciones CRUD, validaciones de negocio, valores dinámicos                    |
-| Configuración   | Definición declarativa en YAML, sin código Java para pruebas                    |
-| Pre-script      | Obtención automática de headers desde servicios externos con cache              |
-| Reportes        | Markdown detallado, Cucumber HTML, Serenity BDD profesional                     |
-| Dinamismo       | Generación automática de emails, UUIDs, timestamps, datos aleatorios            |
-| Rendimiento     | Ejecución paralela, cache de headers, timeouts configurables                    |
+## 1. Purpose
+The API Testing Framework is a Java‑based automation tool for testing REST APIs. It uses Cucumber (BDD), Rest Assured, and Serenity BDD to provide:
+- Declarative test definition via YAML files.
+- Built‑in support for authentication, authorization, and functional tests.
+- Dynamic header generation (pre‑script) from external services (JSON, text, XML).
+- Automatic generation of test data (emails, UUIDs, timestamps, etc.).
+- Detailed reports in Markdown, Cucumber HTML, and Serenity HTML.
 
-## 2. REQUISITOS PREVIOS
+## 2. Technology Stack
+- **Java 21** – core language.
+- **Maven** – build and dependency management.
+- **Cucumber** – BDD framework with Gherkin syntax.
+- **Rest Assured** – HTTP client for API calls.
+- **Serenity BDD** – reporting and test orchestration.
+- **Jackson** – YAML parsing.
+- **JavaFaker** – random data generation.
+- **JUnit 5** – test execution platform.
 
-- Java JDK 21 o superior
-- Maven 3.6 o superior
-- Git (opcional)
+## 3. Key Features
 
-Verificación:
-  java -version   # Debe mostrar Java 21
-  mvn -version    # Debe mostrar Maven 3.6+
+### 3.1 Test Categorisation
+Tests are organised into three main categories:
+- **Authentication** – validates required headers (e.g., X‑API‑Key, X‑Transaction‑ID, X‑Timestamp) and their formats/values.
+- **Authorization** – checks role‑based access control, endpoint permissions, and HTTP method allowances.
+- **Functional** – covers CRUD operations, business logic validations, and end‑to‑end flows.
 
-Instalación rápida:
-  Ubuntu/Debian: sudo apt update && sudo apt install openjdk-21-jdk maven
-  macOS: brew install openjdk@21 maven
-  Windows: Descargar desde https://adoptium.net/ (Java 21) y https://maven.apache.org/download.cgi
+### 3.2 Declarative Test Definition (YAML)
+Each test case is described in a YAML file. Example:
+```yaml
+tests:
+  - name: "Create user with complete data"
+    method: "POST"
+    endpoint: "/api/v1/usuarios"
+    body:
+      content:
+        nombre: "María González"
+        email: "maria@ejemplo.com"
+        edad: 28
+    expected:
+      status: 201
+    extract:
+      - name: "usuario_id"
+        from: "$.id"
+3.3 Pre‑script (Dynamic Headers)
+Before a test runs, the framework can call an external service to obtain a header value. Supported response formats:
 
-## 3. ESTRUCTURA DEL PROYECTO
+JSON – extract using JSONPath (extract_from).
 
-api-testing-framework/
-│
-├── pom.xml                                      # Configuración Maven
-├── README.md                                    # Documentación
-├── .gitignore
-│
-├── src/
-│   └── test/
-│       ├── java/com/api/
-│       │   ├── runners/                         # Ejecutores de pruebas
-│       │   │   ├── FunctionalTestRunner.java
-│       │   │   ├── AuthenticationTestRunner.java
-│       │   │   ├── AuthorizationTestRunner.java
-│       │   │   └── AllTestsRunner.java
-│       │   ├── stepdefinitions/                 # Step definitions
-│       │   │   ├── CommonSteps.java
-│       │   │   ├── AuthenticationSteps.java
-│       │   │   ├── AuthorizationSteps.java
-│       │   │   └── PreScriptSteps.java
-│       │   ├── models/                          # Modelos de datos (Records)
-│       │   │   ├── TestSuite.java
-│       │   │   ├── HeaderConfig.java
-│       │   │   └── TestReport.java
-│       │   ├── listeners/                       # Listeners para reportes
-│       │   │   ├── ReportListener.java
-│       │   │   └── TestContext.java
-│       │   └── utils/                           # Utilidades
-│       │       ├── EnvironmentManager.java
-│       │       ├── DynamicValueGenerator.java
-│       │       ├── YamlTestLoader.java
-│       │       ├── YamlHeaderLoader.java
-│       │       ├── PreScriptExecutor.java
-│       │       └── MarkdownReportGenerator.java
-│       └── resources/
-│           ├── features/                        # Archivos Gherkin (.feature)
-│           │   ├── authentication/
-│           │   │   └── headers_validation.feature
-│           │   ├── authorization/
-│           │   │   └── endpoint_access.feature
-│           │   └── functional/
-│           │       └── crud_operations.feature
-│           ├── tests/                           # Suites de pruebas en YAML
-│           │   ├── authentication/
-│           │   │   └── headers-validation.yaml
-│           │   ├── authorization/
-│           │   │   └── endpoint-access.yaml
-│           │   └── functional/
-│           │       └── crud-operations.yaml
-│           ├── headers/
-│           │   └── base-headers.yaml
-│           ├── cucumber.properties
-│           └── config.env
-│
-└── target/                                      # Directorio generado
-    ├── cucumber-reports/
-    ├── reports/
-    └── site/serenity/
+XML – extract using XPath.
 
-## 4. INSTALACIÓN
+Plain text – extract using a regular expression (extract_regex) or use the whole body.
 
-Paso 1: Clonar el repositorio
-  git clone https://github.com/tu-usuario/api-testing-framework.git
-  cd api-testing-framework
+Configuration in base-headers.yaml:
 
-Paso 2: Configurar variables de entorno
-  Editar src/test/resources/config.env:
-    BASE_URL=https://api.ejemplo.com/v2
-    API_KEY=tu-api-key-aqui
-    TEST_USER=usuario@ejemplo.com
-    TEST_PASSWORD=tu-contraseña
-    APPLICATION_NAME=mi-aplicacion
-    ENVIRONMENT_TYPE=testing
+yaml
+pre_script:
+  enabled: true
+  headers:
+    X-Auth-Token:
+      service_url: "https://auth.service.com/token"
+      method: "POST"
+      body:
+        grant_type: "client_credentials"
+      extract_from: "$.access_token"
+      response_type: "json"
+      timeout: 5000
+      retry: 3
+3.4 Dynamic Value Generation
+The framework can generate test data on the fly using placeholders like ${dynamic.email} or ${random.full_name}. Supported dynamic types:
 
-Paso 3: Configurar headers base
-  Editar src/test/resources/headers/base-headers.yaml:
-    headers:
-      base:
-        X-API-Key: "${API_KEY}"
-        X-Application: "${APPLICATION_NAME}"
-        Content-Type: "application/json"
-        Accept: "application/json"
-      pre_script:
-        enabled: false
-        headers: {}
-      dynamic:
-        generate_transaction_id: true
-        generate_timestamp: true
-      required:
-        - "X-API-Key"
-        - "X-Transaction-ID"
-        - "X-Timestamp"
+email – unique email with timestamp.
 
-Paso 4: Compilar el proyecto
-  mvn clean compile
+uuid – random UUID.
 
-Paso 5: Verificar la instalación
-  mvn test -Dcucumber.filter.tags="@Smoke"
+timestamp – ISO 8601 timestamp.
 
-Instalación con Docker (alternativa)
-  Crear Dockerfile:
-    FROM maven:3.9-eclipse-temurin-21
-    WORKDIR /app
-    COPY pom.xml .
-    COPY src ./src
-    RUN mvn clean compile
-    CMD ["mvn", "test"]
-  Construir: docker build -t api-testing-framework .
-  Ejecutar: docker run --rm -v $(pwd)/target:/app/target api-testing-framework
+random – numbers, strings, booleans, names, etc.
 
-## 5. CONFIGURACIÓN
+3.5 Reporting
+Three report formats are automatically generated:
 
-Archivos principales:
+Markdown (target/reports/test-report-*.md) – detailed scenario breakdown with request/response.
 
-- config.env: Variables de entorno (URLs, credenciales, timeouts, flags)
-- base-headers.yaml: Headers base, pre-script dinámico, headers requeridos/opcionales
-- cucumber.properties: Configuración de Cucumber (plugins, glue, tags, paralelismo)
-- suites YAML: Definición de pruebas en formato declarativo
+Cucumber HTML (target/cucumber-reports/index.html) – visual execution report.
 
-Ejemplo de suite YAML:
-  suite:
-    name: "Pruebas Funcionales"
-    type: "functional"
-    base_url: "https://api.ejemplo.com/v2"
-    tests:
-      - name: "Crear usuario"
-        method: "POST"
-        endpoint: "/api/v1/usuarios"
-        body:
-          content:
-            nombre: "María González"
-            email: "maria@ejemplo.com"
-        expected:
-          status: 201
-        extract:
-          - name: "usuario_id"
-            from: "$.id"
+Serenity HTML (target/site/serenity/index.html) – professional dashboard with graphs.
 
-Perfiles de configuración:
-  src/test/resources/config-dev.env, config-qa.env, config-prod.env
-  Uso: cp config-qa.env config.env && mvn test
+4. Project Structure (Highlights)
+text
+src/test/java/com/api/
+├── runners/          # JUnit runners for each test category
+├── stepdefinitions/  # Cucumber step implementations
+├── models/           # Java records for YAML/configuration models
+├── listeners/        # ReportListener (captures events, generates markdown)
+└── utils/            # Helper classes:
+    ├── EnvironmentManager.java      # loads config.env
+    ├── DynamicValueGenerator.java   # creates random data
+    ├── YamlTestLoader.java          # reads test suite YAML
+    ├── YamlHeaderLoader.java        # reads header configuration
+    ├── PreScriptExecutor.java       # calls external services, caches results
+    └── MarkdownReportGenerator.java # writes the final Markdown report
 
-Validación de configuración:
-  cat src/test/resources/config.env
-  yamllint src/test/resources/headers/base-headers.yaml
-  mvn test -Dcucumber.execution.dry-run=true
-  mvn clean test && ls -la target/reports/
+src/test/resources/
+├── features/         # Gherkin files (e.g., authentication, authorization, functional)
+├── tests/            # YAML suites (headers-validation.yaml, endpoint-access.yaml, crud-operations.yaml)
+├── headers/          # base-headers.yaml
+├── cucumber.properties
+└── config.env        # environment variables (BASE_URL, API_KEY, etc.)
+5. Installation & Configuration
+5.1 Prerequisites
+Java 21
 
-## 6. EJECUCIÓN DE PRUEBAS
+Maven 3.6+
 
-Todas las pruebas:
-  mvn clean test
+Git (optional)
 
-Por categoría:
-  mvn test -Dcucumber.filter.tags="@Authentication"
-  mvn test -Dcucumber.filter.tags="@Authorization"
-  mvn test -Dcucumber.filter.tags="@Functional"
-  mvn test -Dcucumber.filter.tags="@Smoke"
+5.2 Steps
+Clone the repository.
 
-Por runner específico:
+Edit src/test/resources/config.env with your API base URL, API key, and test credentials.
+
+Edit src/test/resources/headers/base-headers.yaml to define static headers and pre‑script services.
+
+Run mvn clean compile to build.
+
+Execute a smoke test: mvn test -Dcucumber.filter.tags="@Smoke".
+
+6. Running Tests
+6.1 Common Maven Commands
+Command	Description
+mvn clean test	Run all tests.
+mvn test -Dcucumber.filter.tags="@Functional"	Run functional tests.
+mvn test -Dtest=FunctionalTestRunner	Run using a specific runner.
+mvn test -Dcucumber.filter.name="Create user"	Run scenario by name.
+mvn test -Denvironment=qa	Use a specific environment profile (requires separate config.env).
+mvn test -Dcucumber.execution.dry-run=true	Validate steps without executing.
+6.2 Parallel Execution
+Enable parallelism with:
+
+bash
+mvn test -Dcucumber.execution.parallel.enabled=true -Dcucumber.execution.parallel.config.fixed.parallelism=4
+6.3 Re‑running Failed Tests
+After a run, failed tests are listed in target/rerun.txt. Re‑run them with:
+
+bash
+mvn test -Dcucumber.features=@target/rerun.txt
+7. Generating Reports
+Markdown: Generated automatically after mvn test. Located in target/reports/.
+
+Serenity: mvn serenity:aggregate creates target/site/serenity/index.html.
+
+All reports: mvn clean verify.
+
+8. Extending the Framework
+8.1 Adding a New Dynamic Value Type
+Modify DynamicValueGenerator.java and add a new case in the generateByType or generateRandom methods.
+
+8.2 Adding a New Header Type in Pre‑script
+Edit base-headers.yaml under pre_script.headers. Define the service URL, method, body, extraction method, and response type.
+
+8.3 Adding a New Test Category
+Create a new folder under features/ and tests/.
+
+Create a new runner class extending org.junit.platform.suite.api.Suite.
+
+Add step definitions if new custom steps are needed.
+
+9. Troubleshooting
+Issue	Solution
+java -version shows wrong version	Set JAVA_HOME to JDK 21 path.
+mvn: command not found	Install Maven.
+YAML files not found	Ensure they are under src/test/resources/ and the path in the .feature file matches.
+Cannot resolve symbol 'En'	Use annotation‑based step definitions instead of lambda‑style.
+socketTimeout method not found	Use .timeout() in Rest Assured (or .socketTimeout() only if you have Rest Assured 5.x).
+Connection timeout	Increase timeout in base-headers.yaml for the relevant service.
+10. Example: Writing a New Test
+Create a YAML suite in src/test/resources/tests/my‑suite.yaml:
+
+yaml
+suite:
+  name: "My new tests"
+  type: "functional"
+  base_url: "https://my.api.com/v1"
+  tests:
+    - name: "Get user by ID"
+      method: "GET"
+      endpoint: "/users/{id}"
+      path_params:
+        id: "123"
+      expected:
+        status: 200
+Create a Gherkin feature in src/test/resources/features/my‑suite.feature:
+
+gherkin
+Feature: My suite
+
+  Background:
+    Given se carga la suite de pruebas "tests/my-suite.yaml"
+    And se cargan los headers base
+
+  @Functional
+  Scenario: Get user by ID
+    When se ejecuta la prueba "Get user by ID"
+    Then el código de respuesta debe ser 200
+    And el campo "id" debe ser "123"
+Run:
+
+bash
+mvn test -Dcucumber.filter.tags="@Functional" -Dcucumber.filter.name="Get user by ID"
+11. How to Ask for Help
+When asking questions about this framework, provide:
+
+The exact command you ran.
+
+The error message or unexpected behaviour.
+
+Relevant sections of configuration files (e.g., config.env, base-headers.yaml, your YAML test suite).
+
+The AI will use this overview to provide precise guidance.
